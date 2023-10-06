@@ -45,7 +45,6 @@ function EditarCardForm({
       <input
         {...register("title", {
           required: "Title is required",
-          pattern: /^[A-Za-z]+@/i,
         })}
         aria-invalid={errors.title ? true : false}
         className="p-4 focus:shadow-violet8 inline-flex rounded-lg bg-gray-100  px-[10px] text-[15px] leading-none "
