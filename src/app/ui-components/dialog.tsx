@@ -1,9 +1,13 @@
 import React, { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { Inputs } from "../components/edit-card-form";
 
 const DialogDemo = () => {
   const [value, setValue] = useState("");
+  const [error, setError] = useState(false);
+
   return (
     <Dialog.Root>
       <Dialog.Trigger asChild>
@@ -19,10 +23,10 @@ const DialogDemo = () => {
           </Dialog.Title>
           <Dialog.Description className="mt-[10px] mb-5 text-base leading-normal">
             An application will be sent to your email address{" "}
-            <span className="font-semibold">{value}</span> so he/she can join
-            the team.
+            <span className="font-semibold">{!error && value}</span> so he/she
+            can join the team.
           </Dialog.Description>
-          <fieldset className="mb-[15px] flex items-center gap-5">
+          <form className="mb-[15px] flex  items-center gap-5">
             <label
               className="sr-only text-violet11 w-[90px] text-right text-[15px]"
               htmlFor="name"
@@ -32,13 +36,25 @@ const DialogDemo = () => {
             <input
               onChange={(event) => {
                 setValue(event.target.value);
+                setTimeout(() => {
+                  if (event.target.value.indexOf("@") === -1) {
+                    setError(true);
+                  } else {
+                    setError(false);
+                  }
+                }, 500);
               }}
               value={value}
               className="text-violet11 shadow-violet7 focus:shadow-violet8 inline-flex h-[35px] w-full flex-1 items-center justify-center rounded-[4px] px-[10px] text-[15px] leading-none shadow-[0_0_0_1px] outline-none focus:shadow-[0_0_0_2px]"
               id="name"
               placeholder="brayancclindo@gmail.com"
             />
-          </fieldset>
+            {error && (
+              <p className="text-red-500 text-sm font-semibold">
+                "@"is required
+              </p>
+            )}
+          </form>
 
           <div className="mt-[25px] flex justify-end">
             <Dialog.Close asChild>
