@@ -18,7 +18,7 @@ const config: Config = {
       },
       colors: {
         main: "#202020",
-        primary: "#519839",
+        primary: "#00002c",
         button: "#2b6777",
         "gray-100": "#f2f2f2",
       },

@@ -1,16 +1,8 @@
 import { FormEvent, LegacyRef } from "react";
 import { InputValueType } from "../ui-components/edit-card-dialog";
 import { Inputs } from "../components/edit-card-form";
+import { Profile } from "../ui-components/edit-profile";
 
-export type TodoListType = {
-  title: string;
-  id: number;
-  user: {
-    name: string;
-    avatar: string;
-  };
-  comments?: ComenntsType[];
-};
 type ComenntsType = {
   text?: string;
   user?: {
@@ -33,19 +25,31 @@ export type DataType = {
 };
 
 export type CardType = {
-  todoList: TodoListType[];
-  inProgressList: TodoListType[];
-  doneList: TodoListType[];
+  title: string;
+  id: number;
+  list: string;
+  user: {
+    name: string;
+    avatar: string;
+  };
+  date: string;
+};
+
+export type ProfileType = {
+  nombre: string;
+  foto: string;
 };
 export type TrelloContextType = {
-  stateCard: CardType;
-  addNewCard: (event: React.DragEvent, newCardTitle: string) => void;
+  stateCard: CardType[];
+  addNewCard: (event: FormEvent, newCardTitle: string, id: string) => void;
+  deleteCard: (id: number) => void;
+  stateProfile: ProfileType;
   editCards: (
     event: FormEvent,
-    id: string,
-    todo: TodoListType,
-    inputValue: Inputs
+    todo: CardType,
+    inputValue: Inputs,
+    id: number
   ) => void;
-  dragStart: (event: React.DragEvent, todo: TodoListType) => void;
-  completedDrag: (event: React.DragEvent) => void;
+  completedDrag: (event: React.DragEvent, list: string) => void;
+  handleProfile: (nombre: string, image: string) => void;
 };

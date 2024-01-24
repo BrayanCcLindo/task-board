@@ -1,86 +1,126 @@
 "use client";
 
-import { createContext, useContext, useReducer, FormEvent } from "react";
-import { todoList, inProgressList, doneList } from "../app/api/api";
-import { TodoListType, TrelloContextType } from "./api/type";
-import { InputValueType } from "./ui-components/edit-card-dialog";
+import {
+  createContext,
+  useContext,
+  useReducer,
+  FormEvent,
+  useEffect,
+} from "react";
+import { todos } from "../app/api/api";
+import { CardType, TrelloContextType } from "./api/type";
 import { Inputs } from "./components/edit-card-form";
 
 export const TrelloContext = createContext<TrelloContextType>(
   {} as TrelloContextType
 );
 
-const initialValue = {
-  todoList,
-  inProgressList,
-  doneList,
+const initialValue = JSON.parse(localStorage.getItem("card")) ?? todos;
+
+export const updateLocalStorage = (state: any) => {
+  window.localStorage.setItem("card", JSON.stringify(state));
+};
+
+export const updateUserStorage = (state: any) => {
+  window.localStorage.setItem("user", JSON.stringify(state));
 };
 
 const reducer = (state: any, action: any) => {
   switch (action.type) {
     case "ADD_NEW_CARD": {
+      const date = new Date();
+      const formatDate = new Intl.DateTimeFormat("es", {
+        hour: "numeric",
+        minute: "numeric",
+      }).format(date);
+
       const NewCard = {
         title: "",
-        id: Math.floor(Math.random() * 100) + 1,
+        id: Date.now(),
+        list: action.id,
+        date: formatDate,
         user: {
-          name: "Brayan",
+          name: action.stateProfile.nombre,
           avatar: "/user-profile-icon-free-vector.jpg",
         },
         comments: [],
       };
-      const listId = action.event.target.parentNode.parentNode.dataset.id;
 
       const newList = structuredClone(state);
       if (action.newCardTitle !== "") {
         NewCard.title = action.newCardTitle;
-        newList[listId].push(NewCard);
+        newList.push(NewCard);
       }
+      updateLocalStorage(newList);
+
       return newList;
     }
     case "EDIT_CARD": {
+      const date = new Date();
+      const formatDate = new Intl.DateTimeFormat("es", {
+        hour: "numeric",
+        minute: "numeric",
+      }).format(date);
       action.event.preventDefault();
       const listclone = structuredClone(state);
-      const todoIndex = listclone[action.id].findIndex(
-        (card: TodoListType) => card.id === action.todo.id
+
+      const todoIndex = listclone.findIndex(
+        (card: CardType) => card.id === action.todo.id
       );
-      const choosenCard = listclone[action.id][todoIndex];
-      if (action.inputValue.title) {
+      const choosenCard = listclone[todoIndex];
+      if (action.inputValue.title && action.inputValue.name) {
         choosenCard.title = action.inputValue.title;
+        choosenCard.date = formatDate;
+        action.stateProfile.nombre = action.inputValue.name;
       }
-      if (action.inputValue.input[0]) {
-        const actualImgValue = URL.createObjectURL(action.inputValue.input[0]);
-        choosenCard.user.avatar = actualImgValue;
-      }
+      console.log(listclone, "listclone");
+
+      updateLocalStorage(listclone);
+
       return listclone;
     }
     case "DRAG_COMPLETED": {
-      const list = action.event.target.parentNode.dataset.id;
+      const itemId = action.event.dataTransfer.getData("itemID");
+      console.log(action.list, "itemId");
+
+      const listclone = state.find((todo: CardType) => todo.id == itemId);
+      if (listclone) {
+        listclone.list = action.list;
+      }
+
+      const newTodos = state.map((todo: CardType) => {
+        if (todo.list === itemId) return listclone;
+        return todo;
+      });
+      updateLocalStorage(newTodos);
+      return newTodos;
+    }
+    case "DELETE_CARD": {
       const listclone = structuredClone(state);
-      const newList = listclone[action.stateDrag.list].filter(
-        (item: TodoListType) => item.id !== action.stateDrag?.data.id
+
+      const newCards = listclone.filter(
+        (card: CardType) => card.id !== action.id
       );
-      listclone[action.stateDrag?.list] = newList;
-      listclone[list]?.push(action.stateDrag?.data);
-      return listclone;
+
+      updateLocalStorage(newCards);
+
+      return newCards;
     }
   }
 };
 
-const initialDragValue = null;
-const dragreducer = (state: any, action: any) => {
+const initialProfile = JSON.parse(localStorage.getItem("user")) ?? {
+  nombre: "",
+  foto: "/profiles-main.jpg",
+};
+const profileReduder = (state: any, action: any) => {
   switch (action.type) {
-    case "DRAG_START": {
+    case "CHANGE_PROFILE": {
       state = {
-        data: {
-          title: action.todo.title,
-          user: action.todo.user,
-          comments: action.todo.comments,
-          id: action.todo.id,
-        },
-        // list: action.listIdNameRef.current.dataset.id,
-        list: action.event.target.dataset.id,
+        nombre: action.nombre,
+        foto: action.image,
       };
-
+      updateUserStorage(state);
       return state;
     }
   }
@@ -88,51 +128,69 @@ const dragreducer = (state: any, action: any) => {
 
 export function TrelloProvider({ children }: { children: React.ReactNode }) {
   const [stateCard, dispatch] = useReducer(reducer, initialValue);
-  const [stateDrag, dispatchDrag] = useReducer(dragreducer, initialDragValue);
+  const [stateProfile, dispatchProfile] = useReducer(
+    profileReduder,
+    initialProfile
+  );
 
-  const addNewCard = (event: React.DragEvent, newCardTitle: string) =>
+  useEffect(() => {
+    localStorage.setItem("Card", JSON.stringify(todos));
+  }, [stateCard]);
+
+  const addNewCard = (event: FormEvent, newCardTitle: string, id: string) =>
     dispatch({
       type: "ADD_NEW_CARD",
       event: event,
       newCardTitle: newCardTitle,
+      id: id,
+      stateProfile: stateProfile,
     });
 
   const editCards = (
     event: FormEvent,
-    id: string,
-    todo: TodoListType,
-    inputValue: Inputs
+    todo: CardType,
+    inputValue: Inputs,
+    id: number
   ) =>
     dispatch({
       type: "EDIT_CARD",
       event: event,
-      id: id,
       todo: todo,
+      id: id,
       inputValue: inputValue,
+      stateProfile: stateProfile,
     });
 
-  const completedDrag = (event: React.DragEvent) =>
+  const completedDrag = (event: React.DragEvent, list: string) =>
     dispatch({
       type: "DRAG_COMPLETED",
       event: event,
-      stateDrag: stateDrag,
+      list: list,
     });
-  const dragStart = (event: React.DragEvent, todo: TodoListType) => {
-    dispatchDrag({
-      type: "DRAG_START",
-      event: event,
-      todo: todo,
+
+  const handleProfile = (nombre: string, image: string) => {
+    dispatchProfile({
+      type: "CHANGE_PROFILE",
+      nombre: nombre,
+      image: image,
     });
   };
+  const deleteCard = (id: number) =>
+    dispatch({
+      type: "DELETE_CARD",
+      id: id,
+    });
 
   return (
     <TrelloContext.Provider
       value={{
         stateCard,
         addNewCard,
+        deleteCard,
+        stateProfile,
         editCards,
-        dragStart,
         completedDrag,
+        handleProfile,
       }}
     >
       {children}

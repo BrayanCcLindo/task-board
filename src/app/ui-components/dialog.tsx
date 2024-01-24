@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { Inputs } from "../components/edit-card-form";
 
 const DialogDemo = () => {
   const [value, setValue] = useState("");

@@ -2,22 +2,20 @@
 
 import { useForm } from "react-hook-form";
 import { useTrelloContext } from "../trelloContext";
-import { TodoListType } from "../api/type";
-import Image from "next/image";
-import { useState } from "react";
+import { CardType } from "../api/type";
 
 export type Inputs = {
   title: string;
-  input: string;
+  name: string;
 };
 
 function EditarCardForm({
-  todo,
   id,
+  todo,
   setOpen,
 }: {
-  todo: TodoListType;
-  id: string;
+  todo: CardType;
+  id: number;
   setOpen: React.Dispatch<React.SetStateAction<boolean | undefined>>;
 }) {
   const {
@@ -26,68 +24,80 @@ function EditarCardForm({
     formState: { errors },
   } = useForm<Inputs>();
 
-  const { editCards } = useTrelloContext();
-  const [image, setImage] = useState(todo.user.avatar);
+  const { editCards, deleteCard } = useTrelloContext();
 
   return (
-    <form
-      onSubmit={handleSubmit((inputValue, event: any) => {
-        console.log(errors, "errors");
-
-        editCards(event, id, todo, inputValue);
-        setOpen(false);
-      })}
-      className="flex flex-col gap-4"
-    >
-      <label className="text-base font-semibold" htmlFor="name">
-        Editar Titulo
-      </label>
-      <input
-        {...register("title", {
-          required: "Title is required",
+    <div>
+      <form
+        onSubmit={handleSubmit((inputValue, event: any) => {
+          editCards(event, todo, inputValue, id);
+          setOpen(false);
         })}
-        aria-invalid={errors.title ? true : false}
-        className="p-4 focus:shadow-violet8 inline-flex rounded-lg bg-gray-100  px-[10px] text-[15px] leading-none "
-        id="name"
-        placeholder={todo.title}
-      />
-      {errors.title && (
-        <p className="text-red-500 text-sm font-semibold">
-          {errors.title.message}
-        </p>
-      )}
-
-      <label className="mt-4 text-base font-semibold" htmlFor="image">
-        Editar Imagen
-      </label>
-      <input
-        {...register("input", {
-          required: "Title is required",
-          onChange: (event) => {
-            if (event.target.files[0]) {
-              const actualImgValue = URL.createObjectURL(event.target.files[0]);
-              setImage(actualImgValue);
-            }
-          },
-        })}
-        type="file"
-        className="p-4  inline-flex rounded-lg   px-[10px] text-[15px] leading-none "
-        id="image"
-      />
-      <Image
-        className="rounded-full object-cover object-center"
-        src={image}
-        width={200}
-        height={200}
-        alt=""
-      />
-      <button
-        type="submit"
-        className="bg-button text-white hover:scale-105 duration-100 focus:scale-110 inline-flex  items-center justify-center rounded-lg p-2 py-4 font-medium"
+        className="flex flex-col gap-4 text-white"
       >
-        Save Changes
-      </button>
-    </form>
+        <label className="text-base font-semibold text-white" htmlFor="name">
+          Editar Titulo
+        </label>
+        <input
+          {...register("title", {
+            required: "Campo requerido",
+          })}
+          aria-invalid={errors.title ? true : false}
+          className="p-4 focus:shadow-violet8 inline-flex rounded-lg bg-[#304973]  px-[10px] text-[15px] leading-none "
+          id="name"
+          placeholder={todo.title}
+        />
+        {errors.title && (
+          <p className="text-red-500 text-sm font-semibold">
+            {errors.title.message}
+          </p>
+        )}
+        <label className="text-base font-semibold text-white" htmlFor="name">
+          Editar Responsable
+        </label>
+        <input
+          {...register("name", {
+            required: "Campo requerido",
+          })}
+          aria-invalid={errors.title ? true : false}
+          className="p-4 focus:shadow-violet8 inline-flex rounded-lg bg-[#304973]  px-[10px] text-[15px] leading-none "
+          id="name"
+          placeholder={todo.user.name}
+        />
+        {errors.name && (
+          <p className="text-red-500 text-sm font-semibold">
+            {errors.name.message}
+          </p>
+        )}
+        <div className="flex gap-4 justify-end items-center">
+          <button
+            type="submit"
+            className="bg-[#304973] text-white hover:scale-105 duration-100 focus:scale-110 inline-flex  items-center justify-center rounded-lg px-6 py-4 font-medium"
+          >
+            Save
+          </button>
+          <button
+            onClick={() => {
+              setOpen(false);
+            }}
+            type="button"
+            className="bg-[#adb5bd] text-white hover:scale-105 duration-100 focus:scale-110 inline-flex  items-center justify-center rounded-lg px-6 py-4 font-medium"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="bg-red-500 text-white hover:scale-105 duration-100 focus:scale-110 inline-flex  items-center justify-center rounded-lg px-6 py-4 font-medium"
+            onClick={() => {
+              deleteCard(id);
+              setOpen(false);
+            }}
+          >
+            Delete
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }
 
